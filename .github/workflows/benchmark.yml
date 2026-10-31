@@ -1,0 +1,40 @@
+name: Accuracy benchmark (real AI)
+
+# Manual run only: it calls the OpenAI API, so it costs a little money.
+# Setup once: GitHub repo -> Settings -> Secrets and variables -> Actions
+#   -> New repository secret -> name: OPENAI_API_KEY
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "OpenAI model name (leave empty to use .env.example default)"
+        required: false
+        default: ""
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run benchmark (50 questions)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ github.event.inputs.model }}
+        run: |
+          if [ -z "$OPENAI_MODEL" ]; then unset OPENAI_MODEL; fi
+          python -m benchmark.run_benchmark --delay 0.5 --out benchmark/results
+
+      - name: Upload results and graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark/results/

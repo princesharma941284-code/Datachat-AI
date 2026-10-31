@@ -1,0 +1,9 @@
+﻿services:
+  datachat-ai:
+    build: .
+    container_name: datachat-ai
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    restart: unless-stopped
